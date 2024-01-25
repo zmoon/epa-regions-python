@@ -100,11 +100,25 @@ regions: dict[tuple[int, str], list[str]] = {
 }
 
 
-def get_regions_geopandas() -> GeoDataFrame:
+def get_regions_geopandas(*, resolution: str = "50m") -> GeoDataFrame:
+    """
+    Parameters
+    ----------
+    resolution : str
+        Resolution of the map. Either '50m' (medium, default) or '10m' (high-res).
+        https://www.naturalearthdata.com/downloads/
+    """
     import regionmask
 
-    states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_50
-    # TODO: other resolution
+    if resolution == "50m":
+        states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_50
+    elif resolution == "10m":
+        states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_10
+    else:
+        raise ValueError(
+            f"unknown or unsupported resolution {resolution!r}. "
+            "Try '50m' (medium) or '10m' (high-res)."
+        )
 
     states_gp = states_rm.to_geodataframe()
 
@@ -121,7 +135,8 @@ def get_regions_geopandas() -> GeoDataFrame:
         aggfunc={"abbrevs": list, "names": list},
     )
     regions_gp["number"] = regions_gp.index.str.slice(1, None).astype(int)
-    regions_gp = regions_gp.rename(columns={
+    regions_gp = regions_gp.rename(
+        columns={
             "abbrevs": "constituents",
             "names": "constituent_names",
         }
@@ -130,10 +145,17 @@ def get_regions_geopandas() -> GeoDataFrame:
     return regions_gp
 
 
-def get_regions_regionmask() -> Regions:
+def get_regions_regionmask(*, resolution: str = "50m") -> Regions:
+    """
+    Parameters
+    ----------
+    resolution : str
+        Resolution of the map. Either "50m" (medium, default) or "10m" (high-res).
+        https://www.naturalearthdata.com/downloads/
+    """
     import regionmask
 
-    regions_gp = get_regions_geopandas()
+    regions_gp = get_regions_geopandas(resolution=resolution)
 
     regions_rm = regionmask.from_geopandas(
         regions_gp.assign(
