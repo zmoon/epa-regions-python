@@ -4,7 +4,12 @@ regionmask and GeoPandas.
 """
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
+
+# logging.basicConfig(level="INFO")
 
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame
@@ -87,6 +92,7 @@ regions: dict[tuple[int, str], list[str]] = {
         "CA",
         "HI",
         "NV",
+        # TODO
         # American Samoa
         # Northern Mariana Islands
         # Micronesia
@@ -129,7 +135,7 @@ def get_regions_geopandas(*, resolution: str = "50m") -> GeoDataFrame:
     for (n, office), states in regions.items():
         not_in = set(states) - set(states_gp.abbrevs)
         if not_in:
-            print(f"note: R{n} has unavailable states/territories: {not_in}")
+            logger.info(f"R{n} has unavailable states/territories: {not_in}")
         loc = states_gp.abbrevs.isin(states)
         states_gp.loc[loc, "epa_region"] = f"R{n}"
         states_gp.loc[loc, "epa_region_office"] = office
