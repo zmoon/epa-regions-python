@@ -192,9 +192,10 @@ if __name__ == "__main__":
     regions_gp = get_regions_geopandas()
     regions_rm = get_regions_regionmask()
 
-    regions_gp.plot(column="number", cmap="tab10", legend=False)
+    fig, ax = plt.subplots(constrained_layout=True, figsize=(6, 3.1))
+    regions_gp.plot(column="number", cmap="tab10", legend=False, ax=ax)
 
-    plt.figure()
+    fig = plt.figure(constrained_layout=True, figsize=fig.get_size_inches())
     regions_rm.plot(add_label=True)
 
     plt.show()
