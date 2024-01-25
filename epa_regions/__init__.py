@@ -93,7 +93,7 @@ regions: dict[tuple[int, str], list[str]] = {
         "CA",
         "HI",
         "NV",
-        # TODO
+        # TODO: strict=True option to include these and PR/VI
         # American Samoa
         # Northern Mariana Islands
         # Micronesia
