@@ -1,4 +1,5 @@
 import itertools
+# import logging; logging.basicConfig(level="INFO")
 
 import matplotlib.pyplot as plt
 
