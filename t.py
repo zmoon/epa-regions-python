@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from geopandas import GeoDataFrame
+    from regionmask import Regions
+
 __all__ = [
     "regions",
     "get_regions_geopandas",
@@ -93,7 +99,7 @@ regions: dict[tuple[int, str], list[str]] = {
 }
 
 
-def get_regions_geopandas():
+def get_regions_geopandas() -> GeoDataFrame:
     import regionmask
 
     states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_50
@@ -114,7 +120,7 @@ def get_regions_geopandas():
     return regions_gp
 
 
-def get_regions_regionmask():
+def get_regions_regionmask() -> Regions:
     import regionmask
 
     regions_gp = get_regions_geopandas()
