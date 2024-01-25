@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
+__version__ = "0.0.1"
+
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame
     from regionmask import Regions
@@ -18,6 +20,7 @@ __all__ = [
     "regions",
     "get_regions_geopandas",
     "get_regions_regionmask",
+    "__version__",
 ]
 
 
