@@ -111,15 +111,21 @@ def get_regions_geopandas() -> GeoDataFrame:
     for (n, office), states in regions.items():
         not_in = set(states) - set(states_gp.abbrevs)
         if not_in:
-            print(f"R{n} has unavailable states/territories: {not_in}")
-        states_gp.loc[states_gp.abbrevs.isin(states), "epa_region"] = f"R{n}"
+            print(f"note: R{n} has unavailable states/territories: {not_in}")
+        loc = states_gp.abbrevs.isin(states)
+        states_gp.loc[loc, "epa_region"] = f"R{n}"
+        states_gp.loc[loc, "epa_region_office"] = office
 
-    # regions_gp = states_gp[["epa_region", "geometry"]].dissolve(by="epa_region")
     regions_gp = states_gp.dissolve(
         by="epa_region",
         aggfunc={"abbrevs": list, "names": list},
     )
-    regions_gp["numbers"] = regions_gp.index.str.slice(1, None).astype(int)
+    regions_gp["number"] = regions_gp.index.str.slice(1, None).astype(int)
+    regions_gp = regions_gp.rename(columns={
+            "abbrevs": "constituents",
+            "names": "constituent_names",
+        }
+    )
 
     return regions_gp
 
@@ -131,16 +137,16 @@ def get_regions_regionmask() -> Regions:
 
     regions_rm = regionmask.from_geopandas(
         regions_gp.assign(
-            names_="Region "
-            + regions_gp.numbers.astype(str)
+            name_="Region "
+            + regions_gp["number"].astype(str)
             + " ("
-            + regions_gp.abbrevs.str.join(", ")
+            + regions_gp["constituents"].str.join(", ")
             + ")",
-            abbrevs_=regions_gp.index,
+            abbrev_=regions_gp.index,
         ),
-        numbers="numbers",
-        names="names_",
-        abbrevs="abbrevs_",
+        numbers="number",
+        names="name_",
+        abbrevs="abbrev_",
     )
 
     return regions_rm
@@ -164,7 +170,7 @@ if __name__ == "__main__":
     regions_gp = get_regions_geopandas()
     regions_rm = get_regions_regionmask()
 
-    regions_gp.plot(column="numbers", cmap="tab10", legend=False)
+    regions_gp.plot(column="number", cmap="tab10", legend=False)
 
     plt.figure()
     regions_rm.plot(add_label=True)
