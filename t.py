@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import itertools
-
-import matplotlib.pyplot as plt
-import regionmask
+__all__ = [
+    "regions",
+    "get_regions_geopandas",
+    "get_regions_regionmask",
+]
 
 
 regions: dict[tuple[int, str], list[str]] = {
@@ -91,44 +92,66 @@ regions: dict[tuple[int, str], list[str]] = {
     ],
 }
 
-# Some checks
-for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(regions.items(), 2):
-    states1_set = set(states1)
-    states2_set = set(states2)
-    assert len(states1) == len(states1_set), f"R{n1} has duplicates"
-    assert len(states2) == len(states2_set), f"R{n2} has duplicates"
-    assert not states1_set & states2_set, f"R{n1} and R{n2} share constituents"
 
-states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_50
+def get_regions_geopandas():
+    import regionmask
 
-states_gp = states_rm.to_geodataframe()
+    states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_50
+    # TODO: other resolution
 
-for (n, office), states in regions.items():
-    not_in = set(states) - set(states_gp.abbrevs)
-    if not_in:
-        print(f"R{n} has unavailable states/territories: {not_in}")
-    states_gp.loc[states_gp.abbrevs.isin(states), "epa_region"] = f"R{n}"
+    states_gp = states_rm.to_geodataframe()
 
-# regions_gp = states_gp[["epa_region", "geometry"]].dissolve(by="epa_region")
-regions_gp = states_gp.dissolve(by="epa_region", aggfunc={"abbrevs": list, "names": list})
-regions_gp["numbers"] = regions_gp.index.str.slice(1, None).astype(int)
+    for (n, office), states in regions.items():
+        not_in = set(states) - set(states_gp.abbrevs)
+        if not_in:
+            print(f"R{n} has unavailable states/territories: {not_in}")
+        states_gp.loc[states_gp.abbrevs.isin(states), "epa_region"] = f"R{n}"
 
-regions_rm = regionmask.from_geopandas(
-    regions_gp
-    .assign(
-        names_="Region " + regions_gp.numbers.astype(str) + " (" + regions_gp.abbrevs.str.join(", ") + ")",
-        abbrevs_=regions_gp.index,
-    ),
-    numbers="numbers",
-    names="names_",
-    abbrevs="abbrevs_",
-)
+    # regions_gp = states_gp[["epa_region", "geometry"]].dissolve(by="epa_region")
+    regions_gp = states_gp.dissolve(by="epa_region", aggfunc={"abbrevs": list, "names": list})
+    regions_gp["numbers"] = regions_gp.index.str.slice(1, None).astype(int)
+
+    return regions_gp
 
 
-regions_gp.plot(column="numbers", cmap="tab10", legend=False)
+def get_regions_regionmask():
+    import regionmask
 
-plt.figure()
-regions_rm.plot(add_label=True)
+    regions_gp = get_regions_geopandas()
+
+    regions_rm = regionmask.from_geopandas(
+        regions_gp
+        .assign(
+            names_="Region " + regions_gp.numbers.astype(str) + " (" + regions_gp.abbrevs.str.join(", ") + ")",
+            abbrevs_=regions_gp.index,
+        ),
+        numbers="numbers",
+        names="names_",
+        abbrevs="abbrevs_",
+    )
+
+    return regions_rm
 
 
-plt.show()
+if __name__ == "__main__":
+    import itertools
+
+    import matplotlib.pyplot as plt
+
+    # Some checks
+    for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(regions.items(), 2):
+        states1_set = set(states1)
+        states2_set = set(states2)
+        assert len(states1) == len(states1_set), f"R{n1} has duplicates"
+        assert len(states2) == len(states2_set), f"R{n2} has duplicates"
+        assert not states1_set & states2_set, f"R{n1} and R{n2} share constituents"
+
+    regions_gp = get_regions_geopandas()
+    regions_rm = get_regions_regionmask()
+
+    regions_gp.plot(column="numbers", cmap="tab10", legend=False)
+
+    plt.figure()
+    regions_rm.plot(add_label=True)
+
+    plt.show()
