@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import itertools
+
 import regionmask
 
 
@@ -87,3 +89,11 @@ regions: dict[tuple[int, str], list[str]] = {
         # "and 271 native tribes"
     ],
 }
+
+# Some checks
+for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(regions.items(), 2):
+    states1_set = set(states1)
+    states2_set = set(states2)
+    assert len(states1) == len(states1_set), f"R{n1} has duplicates"
+    assert len(states2) == len(states2_set), f"R{n2} has duplicates"
+    assert not states1_set & states2_set, f"R{n1} and R{n2} share constituents"
