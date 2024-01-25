@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from geopandas import GeoDataFrame
     from regionmask import Regions
 
+
 __all__ = [
     "regions",
     "get_regions_geopandas",
@@ -114,7 +115,10 @@ def get_regions_geopandas() -> GeoDataFrame:
         states_gp.loc[states_gp.abbrevs.isin(states), "epa_region"] = f"R{n}"
 
     # regions_gp = states_gp[["epa_region", "geometry"]].dissolve(by="epa_region")
-    regions_gp = states_gp.dissolve(by="epa_region", aggfunc={"abbrevs": list, "names": list})
+    regions_gp = states_gp.dissolve(
+        by="epa_region",
+        aggfunc={"abbrevs": list, "names": list},
+    )
     regions_gp["numbers"] = regions_gp.index.str.slice(1, None).astype(int)
 
     return regions_gp
@@ -126,9 +130,12 @@ def get_regions_regionmask() -> Regions:
     regions_gp = get_regions_geopandas()
 
     regions_rm = regionmask.from_geopandas(
-        regions_gp
-        .assign(
-            names_="Region " + regions_gp.numbers.astype(str) + " (" + regions_gp.abbrevs.str.join(", ") + ")",
+        regions_gp.assign(
+            names_="Region "
+            + regions_gp.numbers.astype(str)
+            + " ("
+            + regions_gp.abbrevs.str.join(", ")
+            + ")",
             abbrevs_=regions_gp.index,
         ),
         numbers="numbers",
@@ -145,7 +152,9 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     # Some checks
-    for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(regions.items(), 2):
+    for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(
+        regions.items(), 2
+    ):
         states1_set = set(states1)
         states2_set = set(states2)
         assert len(states1) == len(states1_set), f"R{n1} has duplicates"
