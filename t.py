@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, TYPE_CHECKING
 
-import geopandas as gpd
-import pooch
-import regionmask
-
+if TYPE_CHECKING:
+    from geopandas import GeoDataFrame
 
 try:
     import pyogrio  # noqa: F401
-
-    ENGINE = "pyogrio"
 except ImportError:
     ENGINE = "fiona"
-
+else:
+    ENGINE = "pyogrio"  # NOTE: much faster
 
 
 def _get_cache_dir() -> Path:
+    import pooch
+    import regionmask
+
     try:
         cache_dir_setting = regionmask.get_options()["cache_dir"]
     except Exception:
@@ -32,6 +32,7 @@ def _get_cache_dir() -> Path:
 
 
 def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[Path]:
+    import pooch
 
     base_url = "https://naturalearth.s3.amazonaws.com"
 
@@ -39,8 +40,10 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
     fname = f"{bname}.zip"
 
     aws_version = version.replace("v", "")
-    # NOTE: the 4.1.0 data is available under 4.1.1
-    aws_version = aws_version.replace("4.1.0", "4.1.1")
+
+    # The 4.1.0 data is available under 4.1.1, according to regionmask
+    if aws_version == "4.1.0":
+        aws_version = "4.1.1"
 
     url = f"{base_url}/{aws_version}/{resolution}_{category}/{bname}.zip"
 
@@ -58,10 +61,12 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
     return [Path(f) for f in fns]
 
 
-VERSIONS = ["v4.1.0", "v5.0.0", "v5.1.2"]
+VERSIONS = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.5.1", "v5.1.2"]
+# TODO: test that lists the dirs in the S3 bucket and compares to this
 
 
 class _NaturalEarthFeature(NamedTuple):
+    # Based on:
     # https://github.com/regionmask/regionmask/blob/e74cb22e976925ccd6c8ecaac8a9bfaadab44574/regionmask/defined_regions/_natural_earth.py#L126
 
     short_name: str
@@ -70,69 +75,85 @@ class _NaturalEarthFeature(NamedTuple):
     category: str
     name: str
 
-    def fetch(self, version):
-
+    def fetch(self, version: str) -> list[Path]:
         if version not in VERSIONS:
-
             versions = ", ".join(VERSIONS)
             raise ValueError(f"version must be one of {versions}. Got {version}.")
 
         return _fetch_aws(version, self.resolution, self.category, self.name)
 
-    def shapefilename(self, version):
-
+    def shapefile(self, version: str) -> Path:
         ps = self.fetch(version)
 
         (p,) = filter(lambda x: x.name.endswith(".shp"), ps)
 
         return p
 
-    def read(self, version, bbox=None):
-        shpfilename = self.shapefilename(version=version)
+    def read(self, version: str) -> GeoDataFrame:
+        """
+        Parameters
+        ----------
+        version
+            Natural Earth version. For example, "v4.1.0", "v5.2.1".
+            See https://github.com/nvkelso/natural-earth-vector/releases ,
+            though not all versions are necessarily available on AWS.
+        """
+        import geopandas as gpd
 
-        df = gpd.read_file(shpfilename, encoding="utf8", bbox=bbox, engine=ENGINE)
+        shp = self.shapefile(version=version)
 
-        return df
-
-
-_us_states_50 = _NaturalEarthFeature(
-    short_name="us_states_50",
-    title="Natural Earth: US States 50m",
-    resolution="50m",
-    category="cultural",
-    name="admin_1_states_provinces_lakes",
-)
-_us_states_10 = _NaturalEarthFeature(
-    short_name="us_states_10",
-    title="Natural Earth: US States 10m",
-    resolution="10m",
-    category="cultural",
-    name="admin_1_states_provinces_lakes",
-)
+        return gpd.read_file(shp, encoding="utf8", bbox=None, engine=ENGINE)
 
 
+CODE_TO_ADMIN = {
+    "PR": "Puerto Rico",
+    "VI": "United States Virgin Islands",
+    #
+    "AS": "American Samoa",
+    "MP": "Northern Mariana Islands",
+    "GU": "Guam",
+    "UM": "United States Minor Outlying Islands",
+    "FM": "Federated States of Micronesia",
+    "MH": "Marshall Islands",
+    "PW": "Palau",
+}
 
 
-print(type(_get_cache_dir()), _get_cache_dir())
+def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
+    _states_provinces_lakes_10 = _NaturalEarthFeature(
+        short_name="states_provinces_lakes_10",
+        title="Natural Earth: States, Provinces, and Lakes, 10-m",
+        resolution="10m",
+        category="cultural",
+        name="admin_1_states_provinces_lakes",
+    )
+    # NOTE: seems Guam only available in the 10-m, probably the case for some of the other islands as well
+    # NOTE: sov_a3 = 'US1' includes Guam and PR
+    # NOTE: iso_a2 is the 2-letter code
 
-from pprint import pprint
+    gdf = _states_provinces_lakes_10.read(version)
 
-pprint(_fetch_aws("v5.0.0", "50m", "cultural", "admin_1_states_provinces_lakes"))
+    rs = []
+    for code, admin in CODE_TO_ADMIN.items():
+        gdf_ = gdf.query(f"admin == '{admin}'")[["geometry", "name", "iso_a2"]]
+        assert gdf_["iso_a2"].eq(code).all()
+        r = gdf_.dissolve(aggfunc={"name": list})
+        r = r.rename(columns={"name": "constituent_names"})
+        r["name"] = admin
+        rs.append(r)
 
-import pandas as pd; pd.set_option("display.max_rows", 100)
+    return pd.concat(rs).reset_index(drop=True)
 
-# NOTE: seems Guam only available in the 10m
-gdf = _us_states_10.read("v5.1.2")
 
-# PR's admin is 'Puerto Rico'
-# VI's admin is 'United States Virgin Islands'
+if __name__ == "__main__":
+    from pprint import pprint
 
-# sov_a3 = US1 includes Guam and PR
+    import pandas as pd
 
-# Guam's iso_a2 is GU and admin is 'Guam'
-# There is a 'Northern Mariana Islands' admin
-# And a 'American Samoa' admin (and 'Samoa' as well)
-# And a 'Marshall Islands' admin
-# And 'Palau' admin
-# No 'Micronesia' admin, it includes the above, but 'Federated States of Micronesia'
-# Also 'United States Minor Outlying Islands' (UM) should be included according to https://www.epa.gov/pi
+    pd.set_option("display.max_rows", 100)
+
+    print(type(_get_cache_dir()), _get_cache_dir())
+
+    pprint(_fetch_aws("v5.0.0", "50m", "cultural", "admin_1_states_provinces_lakes"))
+
+    gdf = get_regions()
