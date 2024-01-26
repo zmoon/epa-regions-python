@@ -33,12 +33,14 @@ regions: dict[tuple[int, str], list[str]] = {
         "NH",
         "RI",
         "VT",
+        # "and 10 Tribal Nations"
     ],
     (2, "New York City"): [
         "NJ",
         "NY",
         "PR",  # Puerto Rico
         "VI",  # US Virgin Islands
+        # "and eight Indian Nations"
     ],
     (3, "Philadelphia"): [
         "DE",
@@ -58,6 +60,7 @@ regions: dict[tuple[int, str], list[str]] = {
         "NC",
         "SC",
         "TN",
+        # "and 6 Tribes"
     ],
     (5, "Chicago"): [
         "IL",
@@ -66,6 +69,7 @@ regions: dict[tuple[int, str], list[str]] = {
         "MN",
         "OH",
         "WI",
+        # "and 35 Tribes"
     ],
     (6, "Dallas"): [
         "AR",
@@ -73,12 +77,14 @@ regions: dict[tuple[int, str], list[str]] = {
         "NM",
         "OK",
         "TX",
+        # "and 66 Tribal Nations"
     ],
     (7, "Kansas City"): [
         "IA",
         "KS",
         "MO",
         "NE",
+        # "and Nine Tribal Nations"
     ],
     (8, "Denver"): [
         "CO",
@@ -87,6 +93,7 @@ regions: dict[tuple[int, str], list[str]] = {
         "SD",
         "UT",
         "WY",
+        # "and 28 Tribal Nations"
     ],
     (9, "San Francisco"): [
         "AZ",
@@ -102,13 +109,14 @@ regions: dict[tuple[int, str], list[str]] = {
         "FM",  # Federated States of Micronesia (independent from US since 1986?)
         "MH",  # Marshall Islands
         "PW",  # Palau
+        # "and 148 Tribal Nations"
     ],
     (10, "Seattle"): [
         "AK",
         "ID",
         "OR",
         "WA",
-        # "and 271 native tribes"
+        # "and 271 Tribal Nations"
     ],
 }
 
