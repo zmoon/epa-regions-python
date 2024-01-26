@@ -62,6 +62,7 @@ VERSIONS = ["v4.1.0", "v5.0.0", "v5.1.2"]
 
 
 class _NaturalEarthFeature(NamedTuple):
+    # https://github.com/regionmask/regionmask/blob/e74cb22e976925ccd6c8ecaac8a9bfaadab44574/regionmask/defined_regions/_natural_earth.py#L126
 
     short_name: str
     title: str
