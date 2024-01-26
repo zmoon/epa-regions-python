@@ -117,6 +117,7 @@ CODE_TO_ADMIN = {
     "MH": "Marshall Islands",
     "PW": "Palau",
 }
+ADMIN_TO_CODE = {v: k for k, v in CODE_TO_ADMIN.items()}
 
 
 def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
@@ -133,16 +134,25 @@ def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
 
     gdf = _states_provinces_lakes_10.read(version)
 
-    rs = []
-    for code, admin in CODE_TO_ADMIN.items():
-        gdf_ = gdf.query(f"admin == '{admin}'")[["geometry", "name", "iso_a2"]]
-        assert gdf_["iso_a2"].eq(code).all()
-        r = gdf_.dissolve(aggfunc={"name": list})
-        r = r.rename(columns={"name": "constituent_names"})
-        r["name"] = admin
-        rs.append(r)
+    gdf.columns = gdf.columns.str.lower()
+    gdf = gdf[["geometry", "name", "admin", "iso_a2"]]
 
-    return pd.concat(rs).reset_index(drop=True)
+    gdf = (
+        gdf[gdf["admin"].isin(CODE_TO_ADMIN.values())]
+        .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
+        .rename(columns={"name": "constituent_names"})
+        .reset_index(drop=False)
+        .assign(abbrev=lambda df: df["admin"].map(ADMIN_TO_CODE.get))
+        .rename(columns={"admin": "name"})
+    )
+
+    for admin, iso_set in gdf.set_index("name")["iso_a2"].apply(set).items():
+        assert len(iso_set) == 1
+        assert iso_set.pop() == ADMIN_TO_CODE[admin]
+
+    gdf = gdf.drop(columns=["iso_a2"])
+
+    return gdf
 
 
 if __name__ == "__main__":
