@@ -127,10 +127,6 @@ gdf = _us_states_10.read("v5.1.2")
 # sov_a3 = US1 includes Guam and PR
 # Guam's iso_a2 is GU and admin is Guam
 
-# Palauli
-# gdf.dropna(subset="name")[gdf.name.str.contains("Palau").dropna()].T
-# has sov_a3 = WSM and admin = Samoa
-
 # There is a 'Northern Mariana Islands' admin
 # And a 'American Samoa' admin (and 'Samoa' as well)
 # And a 'Marshall Islands' admin

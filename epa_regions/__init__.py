@@ -94,12 +94,14 @@ regions: dict[tuple[int, str], list[str]] = {
         "HI",
         "NV",
         # TODO: strict=True option to include these and PR/VI
-        # American Samoa ("AS")
-        # Northern Mariana Islands ("MP")
-        # Micronesia ("FM", Federated States of Micronesia, independent from US since 1986?)
-        # Guam ("GU")
-        # Marshall Islands ("MH")
-        # Palau ("PW")
+        # https://www.epa.gov/pi
+        "AS",  # American Samoa
+        "MP",  # Northern Mariana Islands
+        "GU",  # Guam
+        "UM",  # United States Minor Outlying Islands
+        "FM",  # Federated States of Micronesia (independent from US since 1986?)
+        "MH",  # Marshall Islands
+        "PW",  # Palau
     ],
     (10, "Seattle"): [
         "AK",
