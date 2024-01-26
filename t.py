@@ -124,9 +124,12 @@ import pandas as pd; pd.set_option("display.max_rows", 100)
 # NOTE: seems Guam only available in the 10m
 gdf = _us_states_10.read("v5.1.2")
 
-# sov_a3 = US1 includes Guam and PR
-# Guam's iso_a2 is GU and admin is Guam
+# PR's admin is 'Puerto Rico'
+# VI's admin is 'United States Virgin Islands'
 
+# sov_a3 = US1 includes Guam and PR
+
+# Guam's iso_a2 is GU and admin is 'Guam'
 # There is a 'Northern Mariana Islands' admin
 # And a 'American Samoa' admin (and 'Samoa' as well)
 # And a 'Marshall Islands' admin
