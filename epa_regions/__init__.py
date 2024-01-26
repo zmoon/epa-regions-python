@@ -26,6 +26,7 @@ __all__ = [
 
 regions: dict[tuple[int, str], list[str]] = {
     # (number, regional office): [states/territories]
+    # TODO: refactor to number: (regional office, [states/territories]), maybe with named tuple
     (1, "Boston"): [
         "CT",
         "ME",
