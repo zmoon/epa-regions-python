@@ -61,8 +61,7 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
     return [Path(f) for f in fns]
 
 
-VERSIONS = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.5.1", "v5.1.2"]
-# TODO: test that lists the dirs in the S3 bucket and compares to this
+VERSIONS = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.1.1", "v5.1.2"]
 
 
 class _NaturalEarthFeature(NamedTuple):
