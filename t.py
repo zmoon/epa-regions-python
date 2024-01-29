@@ -36,8 +36,8 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
 
     base_url = "https://naturalearth.s3.amazonaws.com"
 
-    bname = f"ne_{resolution}_{name}"
-    fname = f"{bname}.zip"
+    zip_stem = f"ne_{resolution}_{name}"
+    fname = f"{zip_stem}.zip"
 
     aws_version = version.replace("v", "")
 
@@ -45,10 +45,10 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
     if aws_version == "4.1.0":
         aws_version = "4.1.1"
 
-    url = f"{base_url}/{aws_version}/{resolution}_{category}/{bname}.zip"
+    url = f"{base_url}/{aws_version}/{resolution}_{category}/{fname}"
 
     path = _get_cache_dir() / f"natural_earth/{version}"
-    unzipper = pooch.Unzip(extract_dir=bname)
+    unzipper = pooch.Unzip(extract_dir=zip_stem)
 
     fns = pooch.retrieve(
         url,
