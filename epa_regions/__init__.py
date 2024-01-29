@@ -122,76 +122,157 @@ regions: Final[dict[tuple[int, str], list[str]]] = {
 }
 
 
-def get_regions_geopandas(*, resolution: str = "50m") -> GeoDataFrame:
-    """
+CODE_TO_ADMIN = {
+    "PR": "Puerto Rico",
+    "VI": "United States Virgin Islands",
+    #
+    "AS": "American Samoa",
+    "MP": "Northern Mariana Islands",
+    "GU": "Guam",
+    "UM": "United States Minor Outlying Islands",
+    "FM": "Federated States of Micronesia",
+    "MH": "Marshall Islands",
+    "PW": "Palau",
+}
+ADMIN_TO_CODE = {v: k for k, v in CODE_TO_ADMIN.items()}
+
+
+def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
+    """Load EPA regions as GeoPandas GeoDataFrame.
+
+    The Natural Earth shapefiles are downloaded from AWS S3 and cached locally.
+
+    pyogrio will be used as the read engine if available, for speed.
+
     Parameters
     ----------
-    resolution : str
-        Resolution of the map. Either '50m' (medium, default) or '10m' (high-res).
-        https://www.naturalearthdata.com/downloads/
+    resolution
+        Resolution of the map corresponding to the Natural Earth shapefiles
+        (https://www.naturalearthdata.com/downloads/).
+        Either '110m' (low-res), '50m' (medium) or '10m' (high-res, default).
+        NOTE: Islands are only included with 10-m resolution.
+    version
+        Natural Earth version. For example, "v4.1.0", "v5.1.1".
+        See https://github.com/nvkelso/natural-earth-vector/releases ,
+        though not all versions are necessarily available on AWS.
     """
-    import regionmask
+    import pandas as pd
 
-    if resolution == "50m":
-        states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_50
-    elif resolution == "10m":
-        states_rm = regionmask.defined_regions.natural_earth_v5_0_0.us_states_10
-    else:
-        raise ValueError(
-            f"unknown or unsupported resolution {resolution!r}. "
-            "Try '50m' (medium) or '10m' (high-res)."
-        )
+    from .load import load
 
-    states_gp = states_rm.to_geodataframe()
+    gdf = load(resolution, version=version)
+    # NOTE: sov_a3 = 'US1' includes Guam and PR
+    # NOTE: iso_a2 is the 2-letter country code
+
+    gdf.columns = gdf.columns.str.lower()
+
+    #
+    # States + DC
+    #
+
+    states = (
+        gdf[["geometry", "name", "admin", "postal"]]
+        .query("admin == 'United States of America'")
+        .drop(columns=["admin"])
+        .rename(columns={"postal": "abbrev"})
+    )
+
+    #
+    # Other
+    #
+
+    other = (
+        gdf.loc[
+            gdf["admin"].isin(CODE_TO_ADMIN.values()),
+            ["geometry", "name", "admin", "iso_a2"],
+        ]
+        .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
+        .rename(columns={"name": "constituent_names"})
+        .reset_index(drop=False)
+        .assign(abbrev=lambda df: df["admin"].map(ADMIN_TO_CODE.get))
+        .rename(columns={"admin": "name"})
+    )
+
+    # Check code consistency
+    for admin, iso_set in other.set_index("name")["iso_a2"].apply(set).items():
+        assert len(iso_set) == 1
+        assert iso_set.pop() == ADMIN_TO_CODE[admin]
+
+    other = other.drop(columns=["iso_a2"])
+
+    #
+    # Combine
+    #
+
+    gdf = pd.concat([states, other], ignore_index=True, sort=False)
+
+    #
+    # Dissolve to EPA regions
+    #
 
     for (n, office), states in regions.items():
-        not_in = set(states) - set(states_gp.abbrevs)
+        not_in = set(states) - set(gdf.abbrev)
         if not_in:
             logger.info(f"R{n} has unavailable states/territories: {not_in}")
-        loc = states_gp.abbrevs.isin(states)
-        states_gp.loc[loc, "epa_region"] = f"R{n}"
-        states_gp.loc[loc, "epa_region_office"] = office
+        loc = gdf.abbrev.isin(states)
+        gdf.loc[loc, "epa_region"] = f"R{n}"
+        gdf.loc[loc, "epa_region_office"] = office
 
-    regions_gp = states_gp.dissolve(
+    gdf = gdf.dissolve(
         by="epa_region",
-        aggfunc={"abbrevs": list, "names": list},
+        aggfunc={"abbrev": list, "name": list, "epa_region_office": "first"},
     )
-    regions_gp["number"] = regions_gp.index.str.slice(1, None).astype(int)
-    regions_gp = regions_gp.rename(
+
+    gdf = gdf.rename(
         columns={
-            "abbrevs": "constituents",
-            "names": "constituent_names",
+            "abbrev": "constituents",
+            "name": "constituent_names",
         }
     )
 
-    return regions_gp
+    gdf = gdf.reset_index(drop=False)
+    gdf = (
+        gdf.assign(number=gdf["epa_region"].str.slice(1).astype(int))
+        .sort_values(by="number")
+        .reset_index(drop=True)
+    )
+
+    gdf = gdf[
+        [
+            "epa_region",
+            "geometry",
+            "number",
+            "constituents",
+            "constituent_names",
+            "epa_region_office",
+        ]
+    ]
+
+    return gdf
 
 
-def get_regions_regionmask(*, resolution: str = "50m") -> Regions:
-    """
-    Parameters
-    ----------
-    resolution : str
-        Resolution of the map. Either "50m" (medium, default) or "10m" (high-res).
-        https://www.naturalearthdata.com/downloads/
-    """
+def to_regionmask(gdf: GeoDataFrame) -> Regions:
+    """Convert to regionmask Regions."""
     import regionmask
 
-    regions_gp = get_regions_geopandas(resolution=resolution)
-
-    regions_rm = regionmask.from_geopandas(
-        regions_gp.assign(
+    rm = regionmask.from_geopandas(
+        gdf.assign(
             name_="Region "
-            + regions_gp["number"].astype(str)
+            + gdf["number"].astype(str)
             + " ("
-            + regions_gp["constituents"].str.join(", ")
+            + gdf["constituents"].str.join(", ")
             + ")",
-            abbrev_=regions_gp.index,
+            abbrev_=gdf["epa_region"],
         ),
         numbers="number",
         names="name_",
         abbrevs="abbrev_",
+        name="EPA Regions",
+        source=(
+            "Natural Earth (https://www.naturalearthdata.com) / "
+            "EPA (https://www.epa.gov/aboutepa/regional-and-geographic-offices)"
+        ),    
         overlap=False,
     )
 
-    return regions_rm
+    return rm
