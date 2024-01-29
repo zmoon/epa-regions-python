@@ -5,7 +5,7 @@ regionmask and GeoPandas.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -24,102 +24,152 @@ __all__: Final = [
 ]
 
 
-REGIONS: Final[dict[tuple[int, str], list[str]]] = {
-    # (number, regional office): [states/territories]
-    # TODO: refactor to number: (regional office, [states/territories]), maybe with named tuple
-    (1, "Boston"): [
-        "CT",
-        "ME",
-        "MA",
-        "NH",
-        "RI",
-        "VT",
-        # "and 10 Tribal Nations"
-    ],
-    (2, "New York City"): [
-        "NJ",
-        "NY",
-        "PR",  # Puerto Rico
-        "VI",  # US Virgin Islands
-        # "and eight Indian Nations"
-    ],
-    (3, "Philadelphia"): [
-        "DE",
-        "DC",  # Washington DC
-        "MD",
-        "PA",
-        "VA",
-        "WV",
-        # "and 7 federally recognized tribes"
-    ],
-    (4, "Atlanta"): [
-        "AL",
-        "FL",
-        "GA",
-        "KY",
-        "MS",
-        "NC",
-        "SC",
-        "TN",
-        # "and 6 Tribes"
-    ],
-    (5, "Chicago"): [
-        "IL",
-        "IN",
-        "MI",
-        "MN",
-        "OH",
-        "WI",
-        # "and 35 Tribes"
-    ],
-    (6, "Dallas"): [
-        "AR",
-        "LA",
-        "NM",
-        "OK",
-        "TX",
-        # "and 66 Tribal Nations"
-    ],
-    (7, "Kansas City"): [
-        "IA",
-        "KS",
-        "MO",
-        "NE",
-        # "and Nine Tribal Nations"
-    ],
-    (8, "Denver"): [
-        "CO",
-        "MT",
-        "ND",
-        "SD",
-        "UT",
-        "WY",
-        # "and 28 Tribal Nations"
-    ],
-    (9, "San Francisco"): [
-        "AZ",
-        "CA",
-        "HI",
-        "NV",
-        # TODO: strict=True option to include these and PR/VI
-        # https://www.epa.gov/pi
-        "AS",  # American Samoa
-        "MP",  # Northern Mariana Islands
-        "GU",  # Guam
-        "UM",  # United States Minor Outlying Islands
-        "FM",  # Federated States of Micronesia (independent from US since 1986?)
-        "MH",  # Marshall Islands
-        "PW",  # Palau
-        # "and 148 Tribal Nations"
-    ],
-    (10, "Seattle"): [
-        "AK",
-        "ID",
-        "OR",
-        "WA",
-        # "and 271 Tribal Nations"
-    ],
-}
+class Region(NamedTuple):
+    number: int
+
+    office: str
+    """Regional office location, e.g. 'Denver'."""
+
+    constituents: list[str]
+    """States/territories.
+    2-letter codes, e.g. 'CO' (Colorado), 'PR' (Puerto Rico), 'GU' (Guam).
+    """
+
+
+REGIONS: Final[list[Region]] = [
+    Region(
+        1,
+        "Boston",
+        [
+            "CT",
+            "ME",
+            "MA",
+            "NH",
+            "RI",
+            "VT",
+            # "and 10 Tribal Nations"
+        ],
+    ),
+    Region(
+        2,
+        "New York City",
+        [
+            "NJ",
+            "NY",
+            "PR",  # Puerto Rico
+            "VI",  # US Virgin Islands
+            # "and eight Indian Nations"
+        ],
+    ),
+    Region(
+        3,
+        "Philadelphia",
+        [
+            "DE",
+            "DC",  # Washington DC
+            "MD",
+            "PA",
+            "VA",
+            "WV",
+            # "and 7 federally recognized tribes"
+        ],
+    ),
+    Region(
+        4,
+        "Atlanta",
+        [
+            "AL",
+            "FL",
+            "GA",
+            "KY",
+            "MS",
+            "NC",
+            "SC",
+            "TN",
+            # "and 6 Tribes"
+        ],
+    ),
+    Region(
+        5,
+        "Chicago",
+        [
+            "IL",
+            "IN",
+            "MI",
+            "MN",
+            "OH",
+            "WI",
+            # "and 35 Tribes"
+        ],
+    ),
+    Region(
+        6,
+        "Dallas",
+        [
+            "AR",
+            "LA",
+            "NM",
+            "OK",
+            "TX",
+            # "and 66 Tribal Nations"
+        ],
+    ),
+    Region(
+        7,
+        "Kansas City",
+        [
+            "IA",
+            "KS",
+            "MO",
+            "NE",
+            # "and Nine Tribal Nations"
+        ],
+    ),
+    Region(
+        8,
+        "Denver",
+        [
+            "CO",
+            "MT",
+            "ND",
+            "SD",
+            "UT",
+            "WY",
+            # "and 28 Tribal Nations"
+        ],
+    ),
+    Region(
+        9,
+        "San Francisco",
+        [
+            "AZ",
+            "CA",
+            "HI",
+            "NV",
+            # https://www.epa.gov/pi
+            "AS",  # American Samoa
+            "MP",  # Northern Mariana Islands
+            "GU",  # Guam
+            "UM",  # United States Minor Outlying Islands
+            "FM",  # Federated States of Micronesia (independent from US since 1986?)
+            "MH",  # Marshall Islands
+            "PW",  # Palau
+            # "and 148 Tribal Nations"
+        ],
+    ),
+    Region(
+        10,
+        "Seattle",
+        [
+            "AK",
+            "ID",
+            "OR",
+            "WA",
+            # "and 271 Tribal Nations"
+        ],
+    ),
+]
+"""Region definitions."""
 
 
 _OTHER_CODE_TO_ADMIN = {
@@ -210,13 +260,14 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
     # Dissolve to EPA regions
     #
 
-    for (n, office), states in REGIONS.items():
-        not_in = set(states) - set(gdf.abbrev)
+    for r in REGIONS:
+        label = f"R{r.number}"
+        not_in = set(r.constituents) - set(gdf["abbrev"])
         if not_in:
-            logger.info(f"R{n} has unavailable states/territories: {not_in}")
-        loc = gdf.abbrev.isin(states)
-        gdf.loc[loc, "epa_region"] = f"R{n}"
-        gdf.loc[loc, "epa_region_office"] = office
+            logger.info(f"{label} has unavailable states/territories: {not_in}")
+        loc = gdf["abbrev"].isin(r.constituents)
+        gdf.loc[loc, "epa_region"] = label
+        gdf.loc[loc, "epa_region_office"] = r.office
 
     gdf = gdf.dissolve(
         by="epa_region",
@@ -271,7 +322,7 @@ def to_regionmask(gdf: GeoDataFrame) -> Regions:
         source=(
             "Natural Earth (https://www.naturalearthdata.com) / "
             "EPA (https://www.epa.gov/aboutepa/regional-and-geographic-offices)"
-        ),    
+        ),
         overlap=False,
     )
 

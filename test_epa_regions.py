@@ -16,15 +16,20 @@ def test_versions_test_ok():
 
 def test_regions_def():
     assert len(REGIONS) == 10
-    # TODO: keys == list(range(1, 11))
 
-    for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(
-        REGIONS.items(), 2
+    assert [r.number for r in REGIONS] == list(range(1, 11))
+
+    for (n1, consts1), (n2, consts2) in itertools.combinations(
+        [
+            (r.number, r.constituents)
+            for r in REGIONS
+        ],
+        2,
     ):
-        states1_set = set(states1)
-        states2_set = set(states2)
-        assert len(states1) == len(states1_set), f"R{n1} has duplicates"
-        assert len(states2) == len(states2_set), f"R{n2} has duplicates"
+        states1_set = set(consts1)
+        states2_set = set(consts2)
+        assert len(consts1) == len(states1_set), f"R{n1} has duplicates"
+        assert len(consts2) == len(states2_set), f"R{n2} has duplicates"
         assert not states1_set & states2_set, f"R{n1} and R{n2} share constituents"
 
 
