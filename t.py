@@ -36,6 +36,17 @@ def _get_cache_dir() -> Path:
 def _fetch(version: str, resolution: str, category: str, name: str) -> list[Path]:
     """Retrieve locally the files from a Natural Earth zip file,
     downloading from AWS if necessary.
+
+    Parameters
+    ----------
+    version
+        e.g. 'v4.1.0'
+    resolution
+        e.g. '50m'
+    category
+        e.g. 'cultural'
+    name
+        e.g. 'admin_1_states_provinces_lakes'
     """
     import pooch
 
@@ -107,12 +118,12 @@ def get_regions(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataF
     """
     Parameters
     ----------
-    resolution : str
+    resolution
         Resolution of the map corresponding to the Natural Earth shapefiles
         (https://www.naturalearthdata.com/downloads/).
         Either '110m' (low-res), '50m' (medium) or '10m' (high-res, default).
         NOTE: Islands are only included with 10-m resolution.
-    version : str
+    version
         Natural Earth version. For example, "v4.1.0", "v5.1.1".
         See https://github.com/nvkelso/natural-earth-vector/releases ,
         though not all versions are necessarily available on AWS.
