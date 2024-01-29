@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 __all__: Final = [
     "regions",
-    "get_regions_geopandas",
-    "get_regions_regionmask",
+    "get",
+    "to_regionmask",
     "__version__",
 ]
 
@@ -183,7 +183,7 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
 
     other = (
         gdf.loc[
-            gdf["admin"].isin(CODE_TO_ADMIN.values()),
+            gdf["admin"].isin(ADMIN_TO_CODE),
             ["geometry", "name", "admin", "iso_a2"],
         ]
         .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
@@ -252,7 +252,7 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
 
 
 def to_regionmask(gdf: GeoDataFrame) -> Regions:
-    """Convert to regionmask Regions."""
+    """Convert a GeoDataFrame from the `get` function to regionmask Regions."""
     import regionmask
 
     rm = regionmask.from_geopandas(
