@@ -1,0 +1,24 @@
+name: epa-regions
+channels:
+  - conda-forge
+  - nodefaults
+packages:
+  - python=3.11
+  #
+  # Main
+  - geopandas
+  - pandas
+  - pooch
+  - regionmask
+  #
+  # Extra
+  - matplotlib  # used by `python -m epa_regions`
+  - pyogrio  # faster shapefile loading
+  #
+  # Dev
+  - ipython
+  - pytest
+  - pytest-cov
+  #
+  # Examples
+  - cartopy
