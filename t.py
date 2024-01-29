@@ -119,13 +119,33 @@ CODE_TO_ADMIN = {
 ADMIN_TO_CODE = {v: k for k, v in CODE_TO_ADMIN.items()}
 
 
-def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
+def get_regions(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
+    """
+    Parameters
+    ----------
+    resolution : str
+        Resolution of the map corresponding to the Natural Earth shapefiles
+        (https://www.naturalearthdata.com/downloads/).
+        Either '110m' (low-res), '50m' (medium) or '10m' (high-res, default).
+        NOTE: Islands are only included with 10-m resolution.
+    version : str
+        Natural Earth version. For example, "v4.1.0", "v5.1.1".
+        See https://github.com/nvkelso/natural-earth-vector/releases ,
+        though not all versions are necessarily available on AWS.
+    """
     from epa_regions import regions, logger
 
-    _states_provinces_lakes_10 = _NaturalEarthFeature(
-        short_name="states_provinces_lakes_10",
-        title="Natural Earth: States, Provinces, and Lakes, 10-m",
-        resolution="10m",
+    res_m = int(resolution.rstrip("m"))
+
+    allowed_res_m = {10, 50, 110}
+    if res_m not in allowed_res_m:
+        s_allowed = ", ".join(f"'{r}m'" for r in sorted(allowed_res_m))
+        raise ValueError(f"resolution must be one of: {s_allowed}. Got '{res_m}m'.")
+
+    nef = _NaturalEarthFeature(
+        short_name=f"states_provinces_lakes_{res_m}",
+        title=f"Natural Earth: States, Provinces, and Lakes, {res_m}-m",
+        resolution=f"{res_m}m",
         category="cultural",
         name="admin_1_states_provinces_lakes",
     )
@@ -133,7 +153,7 @@ def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
     # NOTE: sov_a3 = 'US1' includes Guam and PR
     # NOTE: iso_a2 is the 2-letter code
 
-    gdf = _states_provinces_lakes_10.read(version)
+    gdf = nef.read(version)
 
     gdf.columns = gdf.columns.str.lower()
 
@@ -218,4 +238,5 @@ if __name__ == "__main__":
 
     pprint(_fetch_aws("v5.0.0", "50m", "cultural", "admin_1_states_provinces_lakes"))
 
-    gdf = get_regions()
+    import logging; logging.basicConfig(level="INFO")
+    gdf = get_regions(resolution="110m")
