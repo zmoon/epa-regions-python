@@ -93,7 +93,7 @@ class _NaturalEarthFeature(NamedTuple):
         Parameters
         ----------
         version
-            Natural Earth version. For example, "v4.1.0", "v5.2.1".
+            Natural Earth version. For example, "v4.1.0", "v5.1.1".
             See https://github.com/nvkelso/natural-earth-vector/releases ,
             though not all versions are necessarily available on AWS.
         """
