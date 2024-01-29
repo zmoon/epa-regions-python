@@ -5,7 +5,7 @@ regionmask and GeoPandas.
 from __future__ import annotations
 
 import logging
-from typing import Final, TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 logger = logging.getLogger(__name__)
 

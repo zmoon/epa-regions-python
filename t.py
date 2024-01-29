@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Final, TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame
@@ -82,6 +82,7 @@ VERSIONS: Final = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.1.1", "v5.1.2"]
 
 
 def _load(resolution: str, *, version: str = "v5.1.2") -> GeoDataFrame:
+    """Load Natural Earth states/provinces/lakes."""
     import geopandas as gpd
 
     if resolution not in RESOLUTIONS:
@@ -92,7 +93,12 @@ def _load(resolution: str, *, version: str = "v5.1.2") -> GeoDataFrame:
         s_allowed = ", ".join(f"'{v}'" for v in VERSIONS)
         raise ValueError(f"version must be one of: {s_allowed}. Got {version!r}.")
 
-    ps = _fetch(version=version, resolution=resolution, category="cultural", name="admin_1_states_provinces_lakes",)
+    ps = _fetch(
+        version=version,
+        resolution=resolution,
+        category="cultural",
+        name="admin_1_states_provinces_lakes",
+    )
 
     (shp,) = [p for p in ps if p.name.endswith(".shp")]
 
@@ -128,7 +134,7 @@ def get_regions(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataF
         See https://github.com/nvkelso/natural-earth-vector/releases ,
         though not all versions are necessarily available on AWS.
     """
-    from epa_regions import regions, logger
+    from epa_regions import logger, regions
 
     gdf = _load(resolution, version=version)
     # NOTE: sov_a3 = 'US1' includes Guam and PR
@@ -152,8 +158,10 @@ def get_regions(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataF
     #
 
     other = (
-        gdf[["geometry", "name", "admin", "iso_a2"]]
-        [gdf["admin"].isin(CODE_TO_ADMIN.values())]
+        gdf.loc[
+            gdf["admin"].isin(CODE_TO_ADMIN.values()),
+            ["geometry", "name", "admin", "iso_a2"],
+        ]
         .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
         .rename(columns={"name": "constituent_names"})
         .reset_index(drop=False)
@@ -199,9 +207,22 @@ def get_regions(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataF
     )
 
     gdf = gdf.reset_index(drop=False)
-    gdf = gdf.assign(number=gdf["epa_region"].str.slice(1).astype(int)).sort_values(by="number").reset_index(drop=True)
+    gdf = (
+        gdf.assign(number=gdf["epa_region"].str.slice(1).astype(int))
+        .sort_values(by="number")
+        .reset_index(drop=True)
+    )
 
-    gdf = gdf[["epa_region", "geometry", "number", "constituents", "constituent_names", "epa_region_office",]]
+    gdf = gdf[
+        [
+            "epa_region",
+            "geometry",
+            "number",
+            "constituents",
+            "constituent_names",
+            "epa_region_office",
+        ]
+    ]
 
     return gdf
 
