@@ -3,7 +3,7 @@ import itertools
 import geopandas as gpd
 import pytest
 
-from epa_regions import get, regions, to_regionmask
+from epa_regions import get, REGIONS, to_regionmask
 from epa_regions.load import RESOLUTIONS, VERSIONS
 
 versions_test = ["v4.1.0", "v5.0.0", "v5.1.2"]
@@ -15,11 +15,11 @@ def test_versions_test_ok():
 
 
 def test_regions_def():
-    assert len(regions) == 10
+    assert len(REGIONS) == 10
     # TODO: keys == list(range(1, 11))
 
     for ((n1, _), states1), ((n2, _), states2) in itertools.combinations(
-        regions.items(), 2
+        REGIONS.items(), 2
     ):
         states1_set = set(states1)
         states2_set = set(states2)
@@ -64,7 +64,7 @@ def test_ne_s3_versions():
 def test_get(resolution, version):
     gdf = get(resolution=resolution, version=version)
     assert isinstance(gdf, gpd.GeoDataFrame)
-    assert len(gdf) == len(regions) == 10
+    assert len(gdf) == len(REGIONS) == 10
     assert list(gdf) == [
         "epa_region",
         "geometry",

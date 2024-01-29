@@ -17,14 +17,14 @@ if TYPE_CHECKING:
 
 
 __all__: Final = [
-    "regions",
+    "REGIONS",
     "get",
     "to_regionmask",
     "__version__",
 ]
 
 
-regions: Final[dict[tuple[int, str], list[str]]] = {
+REGIONS: Final[dict[tuple[int, str], list[str]]] = {
     # (number, regional office): [states/territories]
     # TODO: refactor to number: (regional office, [states/territories]), maybe with named tuple
     (1, "Boston"): [
@@ -122,7 +122,7 @@ regions: Final[dict[tuple[int, str], list[str]]] = {
 }
 
 
-CODE_TO_ADMIN = {
+_OTHER_CODE_TO_ADMIN = {
     "PR": "Puerto Rico",
     "VI": "United States Virgin Islands",
     #
@@ -134,7 +134,7 @@ CODE_TO_ADMIN = {
     "MH": "Marshall Islands",
     "PW": "Palau",
 }
-ADMIN_TO_CODE = {v: k for k, v in CODE_TO_ADMIN.items()}
+_OTHER_ADMIN_TO_CODE = {v: k for k, v in _OTHER_CODE_TO_ADMIN.items()}
 
 
 def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
@@ -183,20 +183,20 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
 
     other = (
         gdf.loc[
-            gdf["admin"].isin(ADMIN_TO_CODE),
+            gdf["admin"].isin(_OTHER_ADMIN_TO_CODE),
             ["geometry", "name", "admin", "iso_a2"],
         ]
         .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
         .rename(columns={"name": "constituent_names"})
         .reset_index(drop=False)
-        .assign(abbrev=lambda df: df["admin"].map(ADMIN_TO_CODE.get))
+        .assign(abbrev=lambda df: df["admin"].map(_OTHER_ADMIN_TO_CODE.get))
         .rename(columns={"admin": "name"})
     )
 
     # Check code consistency
     for admin, iso_set in other.set_index("name")["iso_a2"].apply(set).items():
         assert len(iso_set) == 1
-        assert iso_set.pop() == ADMIN_TO_CODE[admin]
+        assert iso_set.pop() == _OTHER_ADMIN_TO_CODE[admin]
 
     other = other.drop(columns=["iso_a2"])
 
@@ -210,7 +210,7 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
     # Dissolve to EPA regions
     #
 
-    for (n, office), states in regions.items():
+    for (n, office), states in REGIONS.items():
         not_in = set(states) - set(gdf.abbrev)
         if not_in:
             logger.info(f"R{n} has unavailable states/territories: {not_in}")
