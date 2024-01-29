@@ -4,6 +4,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--info", action="store_true")
 parser.add_argument("--resolution", "-r", default="10m")
+parser.add_argument("--states-only", action="store_true")
 
 args = parser.parse_args()
 
@@ -17,7 +18,7 @@ import numpy as np
 
 from . import get
 
-regions = get(resolution=args.resolution)
+regions = get(resolution=args.resolution, states_only=args.states_only)
 
 fig, ax = plt.subplots(constrained_layout=True, figsize=(8, 4))
 regions.plot(column="number", cmap="tab10", ax=ax)

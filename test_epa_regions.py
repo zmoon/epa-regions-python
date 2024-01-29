@@ -68,6 +68,7 @@ def test_ne_s3_versions():
 )
 def test_get(resolution, version):
     gdf = get(resolution=resolution, version=version)
+
     assert isinstance(gdf, gpd.GeoDataFrame)
     assert len(gdf) == len(REGIONS) == 10
     assert list(gdf) == [
@@ -89,3 +90,13 @@ def test_get_invalid():
 
     with pytest.raises(ValueError, match="version must be one of"):
         get(resolution="50m", version="invalid")
+
+
+@pytest.mark.parametrize("resolution", RESOLUTIONS)
+def test_get_states_only(resolution):
+    gdf = get(resolution=resolution, states_only=True)
+
+    assert isinstance(gdf, gpd.GeoDataFrame)
+    assert len(gdf) == len(REGIONS) == 10
+
+    assert len(list(itertools.chain.from_iterable(gdf["constituents"]))) == 51

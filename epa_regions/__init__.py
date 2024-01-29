@@ -187,7 +187,12 @@ _OTHER_CODE_TO_ADMIN = {
 _OTHER_ADMIN_TO_CODE = {v: k for k, v in _OTHER_CODE_TO_ADMIN.items()}
 
 
-def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
+def get(
+    *,
+    resolution: str = "10m",
+    version: str = "v5.1.2",
+    states_only: bool = False,
+) -> GeoDataFrame:
     """Load EPA regions as GeoPandas GeoDataFrame.
 
     The Natural Earth shapefiles are downloaded from AWS S3 and cached locally.
@@ -205,6 +210,9 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
         Natural Earth version. For example, "v4.1.0", "v5.1.1".
         See https://github.com/nvkelso/natural-earth-vector/releases ,
         though not all versions are necessarily available on AWS.
+    states_only
+        States (and DC) only.
+        This only has an effect for the '10m' resolution.
     """
     import pandas as pd
 
@@ -231,24 +239,27 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
     # Other
     #
 
-    other = (
-        gdf.loc[
-            gdf["admin"].isin(_OTHER_ADMIN_TO_CODE),
-            ["geometry", "name", "admin", "iso_a2"],
-        ]
-        .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
-        .rename(columns={"name": "constituent_names"})
-        .reset_index(drop=False)
-        .assign(abbrev=lambda df: df["admin"].map(_OTHER_ADMIN_TO_CODE.get))
-        .rename(columns={"admin": "name"})
-    )
+    if states_only:
+        other = pd.DataFrame()
+    else:
+        other = (
+            gdf.loc[
+                gdf["admin"].isin(_OTHER_ADMIN_TO_CODE),
+                ["geometry", "name", "admin", "iso_a2"],
+            ]
+            .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
+            .rename(columns={"name": "constituent_names"})
+            .reset_index(drop=False)
+            .assign(abbrev=lambda df: df["admin"].map(_OTHER_ADMIN_TO_CODE.get))
+            .rename(columns={"admin": "name"})
+        )
 
-    # Check code consistency
-    for admin, iso_set in other.set_index("name")["iso_a2"].apply(set).items():
-        assert len(iso_set) == 1
-        assert iso_set.pop() == _OTHER_ADMIN_TO_CODE[admin]
+        # Check code consistency
+        for admin, iso_set in other.set_index("name")["iso_a2"].apply(set).items():
+            assert len(iso_set) == 1
+            assert iso_set.pop() == _OTHER_ADMIN_TO_CODE[admin]
 
-    other = other.drop(columns=["iso_a2"])
+        other = other.drop(columns=["iso_a2"])
 
     #
     # Combine
@@ -263,6 +274,8 @@ def get(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataFrame:
     for r in REGIONS:
         label = f"R{r.number}"
         not_in = set(r.constituents) - set(gdf["abbrev"])
+        if states_only:
+            not_in -= _OTHER_CODE_TO_ADMIN.keys()
         if not_in:
             logger.info(f"{label} has unavailable states/territories: {not_in}")
         loc = gdf["abbrev"].isin(r.constituents)
