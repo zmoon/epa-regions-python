@@ -5,7 +5,7 @@ regionmask and GeoPandas.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import Final, TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from regionmask import Regions
 
 
-__all__ = [
+__all__: Final = [
     "regions",
     "get_regions_geopandas",
     "get_regions_regionmask",
@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 
-regions: dict[tuple[int, str], list[str]] = {
+regions: Final[dict[tuple[int, str], list[str]]] = {
     # (number, regional office): [states/territories]
     # TODO: refactor to number: (regional office, [states/territories]), maybe with named tuple
     (1, "Boston"): [

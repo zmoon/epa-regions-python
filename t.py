@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import NamedTuple, TYPE_CHECKING
+from typing import Final, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame
@@ -66,8 +66,8 @@ def _fetch(version: str, resolution: str, category: str, name: str) -> list[Path
     return [Path(f) for f in fns]
 
 
-RESOLUTIONS = ["10m", "50m", "110m"]
-VERSIONS = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.1.1", "v5.1.2"]
+RESOLUTIONS: Final = ["10m", "50m", "110m"]
+VERSIONS: Final = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.1.1", "v5.1.2"]
 
 
 def _load(resolution: str, *, version: str = "v5.1.2") -> GeoDataFrame:
