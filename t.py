@@ -120,6 +120,8 @@ ADMIN_TO_CODE = {v: k for k, v in CODE_TO_ADMIN.items()}
 
 
 def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
+    from epa_regions import regions, logger
+
     _states_provinces_lakes_10 = _NaturalEarthFeature(
         short_name="states_provinces_lakes_10",
         title="Natural Earth: States, Provinces, and Lakes, 10-m",
@@ -134,10 +136,25 @@ def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
     gdf = _states_provinces_lakes_10.read(version)
 
     gdf.columns = gdf.columns.str.lower()
-    gdf = gdf[["geometry", "name", "admin", "iso_a2"]]
 
-    gdf = (
-        gdf[gdf["admin"].isin(CODE_TO_ADMIN.values())]
+    #
+    # States + DC
+    #
+
+    states = (
+        gdf[["geometry", "name", "admin", "postal"]]
+        .query("admin == 'United States of America'")
+        .drop(columns=["admin"])
+        .rename(columns={"postal": "abbrev"})
+    )
+
+    #
+    # Other
+    #
+
+    other = (
+        gdf[["geometry", "name", "admin", "iso_a2"]]
+        [gdf["admin"].isin(CODE_TO_ADMIN.values())]
         .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
         .rename(columns={"name": "constituent_names"})
         .reset_index(drop=False)
@@ -145,11 +162,47 @@ def get_regions(version: str = "v5.1.2") -> GeoDataFrame:
         .rename(columns={"admin": "name"})
     )
 
-    for admin, iso_set in gdf.set_index("name")["iso_a2"].apply(set).items():
+    # Check code consistency
+    for admin, iso_set in other.set_index("name")["iso_a2"].apply(set).items():
         assert len(iso_set) == 1
         assert iso_set.pop() == ADMIN_TO_CODE[admin]
 
-    gdf = gdf.drop(columns=["iso_a2"])
+    other = other.drop(columns=["iso_a2"])
+
+    #
+    # Combine
+    #
+
+    gdf = pd.concat([states, other], ignore_index=True, sort=False)
+
+    #
+    # EPA regions
+    #
+
+    for (n, office), states in regions.items():
+        not_in = set(states) - set(gdf.abbrev)
+        if not_in:
+            logger.info(f"R{n} has unavailable states/territories: {not_in}")
+        loc = gdf.abbrev.isin(states)
+        gdf.loc[loc, "epa_region"] = f"R{n}"
+        gdf.loc[loc, "epa_region_office"] = office
+
+    gdf = gdf.dissolve(
+        by="epa_region",
+        aggfunc={"abbrev": list, "name": list, "epa_region_office": "first"},
+    )
+
+    gdf = gdf.rename(
+        columns={
+            "abbrev": "constituents",
+            "name": "constituent_names",
+        }
+    )
+
+    gdf = gdf.reset_index(drop=False)
+    gdf = gdf.assign(number=gdf["epa_region"].str.slice(1).astype(int)).sort_values(by="number").reset_index(drop=True)
+
+    gdf = gdf[["epa_region", "geometry", "number", "constituents", "constituent_names", "epa_region_office",]]
 
     return gdf
 
