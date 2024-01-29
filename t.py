@@ -15,6 +15,8 @@ else:
 
 
 def _get_cache_dir() -> Path:
+    """Get cache dir, trying to use the same one as regionmask."""
+    # TODO: look for cartopy's too or instead?
     import pooch
     import regionmask
 
@@ -31,7 +33,10 @@ def _get_cache_dir() -> Path:
     return Path(cache_dir).expanduser()
 
 
-def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[Path]:
+def _fetch(version: str, resolution: str, category: str, name: str) -> list[Path]:
+    """Retrieve locally the files from a Natural Earth zip file,
+    downloading from AWS if necessary.
+    """
     import pooch
 
     base_url = "https://naturalearth.s3.amazonaws.com"
@@ -39,7 +44,7 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
     zip_stem = f"ne_{resolution}_{name}"
     fname = f"{zip_stem}.zip"
 
-    aws_version = version.replace("v", "")
+    aws_version = version.lstrip("v")
 
     # The 4.1.0 data is available under 4.1.1, according to regionmask
     if aws_version == "4.1.0":
@@ -61,47 +66,26 @@ def _fetch_aws(version: str, resolution: str, category: str, name: str) -> list[
     return [Path(f) for f in fns]
 
 
+RESOLUTIONS = ["10m", "50m", "110m"]
 VERSIONS = ["v4.1.0", "v5.0.0", "v5.0.1", "v5.1.0", "v5.1.1", "v5.1.2"]
 
 
-class _NaturalEarthFeature(NamedTuple):
-    # Based on:
-    # https://github.com/regionmask/regionmask/blob/e74cb22e976925ccd6c8ecaac8a9bfaadab44574/regionmask/defined_regions/_natural_earth.py#L126
+def _load(resolution: str, *, version: str = "v5.1.2") -> GeoDataFrame:
+    import geopandas as gpd
 
-    short_name: str
-    title: str
-    resolution: str
-    category: str
-    name: str
+    if resolution not in RESOLUTIONS:
+        s_allowed = ", ".join(f"'{r}'" for r in RESOLUTIONS)
+        raise ValueError(f"resolution must be one of: {s_allowed}. Got {resolution!r}.")
 
-    def fetch(self, version: str) -> list[Path]:
-        if version not in VERSIONS:
-            versions = ", ".join(VERSIONS)
-            raise ValueError(f"version must be one of {versions}. Got {version}.")
+    if version not in VERSIONS:
+        s_allowed = ", ".join(f"'{v}'" for v in VERSIONS)
+        raise ValueError(f"version must be one of: {s_allowed}. Got {version!r}.")
 
-        return _fetch_aws(version, self.resolution, self.category, self.name)
+    ps = _fetch(version=version, resolution=resolution, category="cultural", name="admin_1_states_provinces_lakes",)
 
-    def shapefile(self, version: str) -> Path:
-        ps = self.fetch(version)
+    (shp,) = [p for p in ps if p.name.endswith(".shp")]
 
-        (p,) = filter(lambda x: x.name.endswith(".shp"), ps)
-
-        return p
-
-    def read(self, version: str) -> GeoDataFrame:
-        """
-        Parameters
-        ----------
-        version
-            Natural Earth version. For example, "v4.1.0", "v5.1.1".
-            See https://github.com/nvkelso/natural-earth-vector/releases ,
-            though not all versions are necessarily available on AWS.
-        """
-        import geopandas as gpd
-
-        shp = self.shapefile(version=version)
-
-        return gpd.read_file(shp, encoding="utf8", bbox=None, engine=ENGINE)
+    return gpd.read_file(shp, encoding="utf8", bbox=None, engine=ENGINE)
 
 
 CODE_TO_ADMIN = {
@@ -135,25 +119,9 @@ def get_regions(*, resolution: str = "10m", version: str = "v5.1.2") -> GeoDataF
     """
     from epa_regions import regions, logger
 
-    res_m = int(resolution.rstrip("m"))
-
-    allowed_res_m = {10, 50, 110}
-    if res_m not in allowed_res_m:
-        s_allowed = ", ".join(f"'{r}m'" for r in sorted(allowed_res_m))
-        raise ValueError(f"resolution must be one of: {s_allowed}. Got '{res_m}m'.")
-
-    nef = _NaturalEarthFeature(
-        short_name=f"states_provinces_lakes_{res_m}",
-        title=f"Natural Earth: States, Provinces, and Lakes, {res_m}-m",
-        resolution=f"{res_m}m",
-        category="cultural",
-        name="admin_1_states_provinces_lakes",
-    )
-    # NOTE: seems Guam only available in the 10-m, probably the case for some of the other islands as well
+    gdf = _load(resolution, version=version)
     # NOTE: sov_a3 = 'US1' includes Guam and PR
-    # NOTE: iso_a2 is the 2-letter code
-
-    gdf = nef.read(version)
+    # NOTE: iso_a2 is the 2-letter country code
 
     gdf.columns = gdf.columns.str.lower()
 
@@ -236,7 +204,7 @@ if __name__ == "__main__":
 
     print(type(_get_cache_dir()), _get_cache_dir())
 
-    pprint(_fetch_aws("v5.0.0", "50m", "cultural", "admin_1_states_provinces_lakes"))
+    pprint(_fetch("v5.0.0", "50m", "cultural", "admin_1_states_provinces_lakes"))
 
     import logging; logging.basicConfig(level="INFO")
     gdf = get_regions(resolution="110m")
