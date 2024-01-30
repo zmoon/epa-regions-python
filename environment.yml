@@ -18,6 +18,7 @@ packages:
   # Dev
   - ipython
   - pytest
+  - pytest-codeblocks
   - pytest-cov
   #
   # Examples
