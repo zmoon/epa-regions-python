@@ -4,7 +4,15 @@
 
 [![Version on PyPI](https://img.shields.io/pypi/v/epa-regions.svg)](https://pypi.org/project/epa-regions/)
 
-![image](https://github.com/zmoon/epa-regions-python/assets/15079414/003d3c54-bb78-4d44-9c78-5717a935dd41)
+![regions](https://github.com/zmoon/epa-regions-python/assets/15079414/003d3c54-bb78-4d44-9c78-5717a935dd41)
+
+
+<details><summary>Code</summary>
+
+```sh
+python -m epa_regions -r 50m --states-only --save
+```
+</details>
 
 ## Installation
 

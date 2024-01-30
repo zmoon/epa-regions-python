@@ -5,6 +5,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--info", action="store_true")
 parser.add_argument("--resolution", "-r", default="10m")
 parser.add_argument("--states-only", action="store_true")
+parser.add_argument("--axis-on", action="store_true")
+parser.add_argument("--save", action="store_true", help="otherwise show")
 
 args = parser.parse_args()
 
@@ -44,4 +46,10 @@ for y in ys:
         )
         i += 1
 
-plt.show()
+if not args.axis_on:
+    ax.axis("off")
+
+if args.save:
+    fig.savefig("epa_regions.png", dpi="figure", bbox_inches="tight")
+else:
+    plt.show()
