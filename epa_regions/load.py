@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
@@ -23,7 +24,9 @@ def _get_cache_dir() -> Path:
         import regionmask
 
         cache_dir_setting = regionmask.get_options()["cache_dir"]
-    except Exception:
+    except Exception as e:
+        msg = f"Failed to get regionmask's cache dir setting ({type(e).__name__}): {e}"
+        warnings.warn(msg, stacklevel=2)
         cache_dir_setting = None
 
     if cache_dir_setting is None:
