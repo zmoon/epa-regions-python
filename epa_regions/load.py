@@ -18,9 +18,10 @@ def _get_cache_dir() -> Path:
     """Get cache dir, trying to use the same one as regionmask."""
     # TODO: look for cartopy's too or instead?
     import pooch
-    import regionmask
 
     try:
+        import regionmask
+
         cache_dir_setting = regionmask.get_options()["cache_dir"]
     except Exception:
         cache_dir_setting = None
