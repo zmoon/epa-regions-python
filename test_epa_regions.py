@@ -1,9 +1,8 @@
 import itertools
 
-import geopandas as gpd
 import pytest
 
-from epa_regions import get, REGIONS, to_regionmask
+from epa_regions import get, REGIONS, look_up, to_regionmask
 from epa_regions.load import RESOLUTIONS, VERSIONS
 
 versions_test = ["v4.1.0", "v5.0.0", "v5.1.2"]
@@ -67,6 +66,8 @@ def test_ne_s3_versions():
     list(itertools.product(RESOLUTIONS, versions_test)),
 )
 def test_get(resolution, version):
+    import geopandas as gpd
+
     gdf = get(resolution=resolution, version=version)
 
     assert isinstance(gdf, gpd.GeoDataFrame)
@@ -94,9 +95,26 @@ def test_get_invalid():
 
 @pytest.mark.parametrize("resolution", RESOLUTIONS)
 def test_get_states_only(resolution):
+    import geopandas as gpd
+
     gdf = get(resolution=resolution, states_only=True)
 
     assert isinstance(gdf, gpd.GeoDataFrame)
     assert len(gdf) == len(REGIONS) == 10
 
     assert len(list(itertools.chain.from_iterable(gdf["constituents"]))) == 51
+
+
+def test_look_up():
+    import pandas as pd
+
+    input_list = ["PR", "PA", "CO", "TX"]
+    expected = ["R2", "R3", "R8", "R6"]
+
+    s = look_up(input_list)
+    assert s.tolist() == expected
+    assert s.dtype == "category"
+    assert s.cat.categories.tolist() == [f"R{i}" for i in range(1, 11)]
+
+    input_series = pd.Series(input_list)
+    assert look_up(input_series).tolist() == expected

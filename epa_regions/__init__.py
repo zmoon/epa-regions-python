@@ -5,7 +5,7 @@ GeoPandas and regionmask, derived from Natural Earth shapefiles.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +13,14 @@ __version__ = "0.0.3"
 
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame
+    from pandas import Series
     from regionmask import Regions
 
 
 __all__: Final = [
     "REGIONS",
     "get",
+    "look_up",
     "to_regionmask",
     "__version__",
 ]
@@ -340,3 +342,26 @@ def to_regionmask(gdf: GeoDataFrame) -> Regions:
     )
 
     return rm
+
+
+def look_up(abbrs: Any, /) -> Series:
+    """Look up EPA region from 2-letter state/territory abbreviations,
+    e.g. 'CO' (Colorado), 'PR' (Puerto Rico), 'GU' (Guam).
+
+    Parameters
+    ----------
+    abbrs
+        State/territory 2-letter abbreviation strings.
+        `abbrs` should be able to be converted to a pandas Series.
+    """
+    import pandas as pd
+
+    if not isinstance(abbrs, pd.Series):
+        abbrs = pd.Series(abbrs)
+
+    map_ = {c: f"R{r.number}" for r in REGIONS for c in r.constituents}
+    cats = [f"R{r.number}" for r in REGIONS]
+
+    res = abbrs.map(map_).rename("epa_region").astype(pd.CategoricalDtype(cats, ordered=False))
+
+    return res
