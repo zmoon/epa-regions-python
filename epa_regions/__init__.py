@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 logger = logging.getLogger(__name__)
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame
