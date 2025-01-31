@@ -17,11 +17,25 @@ python -m epa_regions -r 50m --states-only --save
 
 ## Installation
 
+With `conda` (recommended):
+
 ```
 conda activate ...
 conda install -c conda-forge geopandas regionmask pooch pyogrio
 pip install epa-regions
 ```
+
+`pip install epa-regions` does not install any dependencies,
+as it expected that you will have installed them with `conda`.
+
+* `geopandas`: needed if you want to use `epa_regions.get()`
+* `pooch`: for downloading/caching the shapefiles for `epa_regions.get()`
+* `pyogrio`: for faster reading of shapefiles
+* `regionmask`: needed if you want to use `epa_regions.to_regionmask()`
+
+Note that `epa_regions.look_up()` requires only `pandas`.
+
+`python -m epa_regions` needs `matplotlib`.
 
 ## Usage
 
