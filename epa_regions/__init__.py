@@ -258,6 +258,7 @@ def get(
 
         # Check code consistency
         for admin, iso_set in other.set_index("name")["iso_a2"].apply(set).items():
+            assert isinstance(admin, str)
             assert len(iso_set) == 1
             assert iso_set.pop() == _OTHER_ADMIN_TO_CODE[admin]
 
@@ -344,7 +345,7 @@ def to_regionmask(gdf: GeoDataFrame) -> Regions:
     return rm
 
 
-def look_up(abbrs: Any, /) -> Series:
+def look_up(abbrs: Any, /) -> Series[str]:
     """Look up EPA region from 2-letter state/territory abbreviations,
     e.g. 'CO' (Colorado), 'PR' (Puerto Rico), 'GU' (Guam).
 
@@ -362,6 +363,10 @@ def look_up(abbrs: Any, /) -> Series:
     map_ = {c: f"R{r.number}" for r in REGIONS for c in r.constituents}
     cats = [f"R{r.number}" for r in REGIONS]
 
-    res = abbrs.map(map_).rename("epa_region").astype(pd.CategoricalDtype(cats, ordered=False))
+    res: Series[str] = (
+        abbrs.map(map_)
+        .rename("epa_region")
+        .astype(pd.CategoricalDtype(cats, ordered=False))
+    )
 
     return res
