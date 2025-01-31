@@ -33,7 +33,10 @@ as it is expected that you will have installed them with `conda`.
 * `pyogrio`: for faster reading of shapefiles
 * `regionmask`: needed if you want to use `epa_regions.to_regionmask()`
 
-Note that `epa_regions.look_up()` requires only `pandas`.
+Note that `epa_regions.look_up()` requires only `pandas`,
+and you can access the region definitions
+(region number, office, and state/territory constituents)
+at `epa_regions.REGIONS` without any 3rd-party dependencies.
 
 `python -m epa_regions` needs `matplotlib`.
 
