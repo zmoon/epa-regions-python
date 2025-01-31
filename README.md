@@ -26,7 +26,7 @@ pip install epa-regions
 ```
 
 `pip install epa-regions` does not install any dependencies,
-as it expected that you will have installed them with `conda`.
+as it is expected that you will have installed them with `conda`.
 
 * `geopandas`: needed if you want to use `epa_regions.get()`
 * `pooch`: for downloading/caching the shapefiles for `epa_regions.get()`
