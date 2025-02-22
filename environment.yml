@@ -21,5 +21,5 @@ dependencies:
   - flit
   - ipython
   #
-  pip:
-    - "-e ."
+  - pip:
+      - "-e ."
