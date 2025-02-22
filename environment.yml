@@ -9,7 +9,7 @@ dependencies:
   - geopandas
   - pooch
   - pyogrio
-  - regionmask
+  - regionmask>=0.13
   #
   - cartopy
   - matplotlib-base
