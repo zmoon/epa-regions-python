@@ -36,7 +36,7 @@ def test_ne_s3_versions():
     import re
     from pathlib import Path
 
-    import s3fs
+    import s3fs  # type: ignore[import-untyped]
 
     s3 = s3fs.S3FileSystem(anon=True)
     objs = s3.ls("naturalearth")
@@ -66,7 +66,7 @@ def test_ne_s3_versions():
     list(itertools.product(RESOLUTIONS, versions_test)),
 )
 def test_get(resolution, version):
-    import geopandas as gpd
+    import geopandas as gpd  # type: ignore[import-untyped]
 
     gdf = get(resolution=resolution, version=version)
 

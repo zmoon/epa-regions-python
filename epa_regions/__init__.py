@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 __version__ = "0.0.4"
 
 if TYPE_CHECKING:
-    from geopandas import GeoDataFrame
+    from geopandas import GeoDataFrame  # type: ignore[import-untyped]
     from pandas import Series
     from regionmask import Regions
 

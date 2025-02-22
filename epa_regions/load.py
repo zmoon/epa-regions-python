@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
-    from geopandas import GeoDataFrame
+    from geopandas import GeoDataFrame  # type: ignore[import-untyped]
 
 try:
-    import pyogrio  # noqa: F401
+    import pyogrio  # type: ignore[import-untyped]  # noqa: F401
 except ImportError:
     ENGINE = "fiona"
 else:
@@ -18,7 +18,7 @@ else:
 def _get_cache_dir() -> Path:
     """Get cache dir, trying to use the same one as regionmask."""
     # TODO: look for cartopy's too or instead?
-    import pooch
+    import pooch  # type: ignore[import-untyped]
 
     try:
         import regionmask

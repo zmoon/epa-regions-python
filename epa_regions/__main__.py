@@ -41,7 +41,7 @@ for y in ys:
             va="top",
             transform=ax.transAxes,
             fontsize=13,
-            color=plt.cm.tab10.colors[i - 1],
+            color=plt.cm.tab10.colors[i - 1],  # type: ignore[attr-defined]
             # weight="bold",
         )
         i += 1

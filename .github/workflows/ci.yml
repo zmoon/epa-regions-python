@@ -34,7 +34,7 @@ jobs:
         run: python -m epa_regions
 
       - name: Run mypy
-        run: mypy --install-types --non-interactive epa_regions
+        run: mypy --install-types --non-interactive epa_regions *.py
 
       - name: Test that package builds
         run: flit build
