@@ -15,6 +15,7 @@ dependencies:
   - matplotlib-base
   - mypy
   - pytest
+  - pytest-codeblocks
   - s3fs
   #
   - flit

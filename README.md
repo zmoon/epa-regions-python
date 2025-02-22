@@ -19,6 +19,8 @@ python -m epa_regions -r 50m --states-only --save
 
 With `conda` (recommended):
 
+<!--pytest.mark.skip-->
+
 ```
 conda activate ...
 conda install -c conda-forge geopandas regionmask pooch pyogrio
