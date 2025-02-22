@@ -50,7 +50,7 @@ def test_ne_s3_versions():
             version_dirs.append(p)
 
     versions = [
-        f"v4.1.0" if p.name == "4.1.1" else f"v{p.name}"
+        "v4.1.0" if p.name == "4.1.1" else f"v{p.name}"
         for p in version_dirs
     ]
     s3_versions_set = set(versions)
