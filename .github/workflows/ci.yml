@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist
+          path: dist/*
           retention-days: 1
 
       - name: Upload shapefiles
@@ -83,10 +83,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name:
-          merge-multiple: true
 
-      - name: List downloaded artifacts
-        run: ls -Al
+      - name: Examine working directory
+        run: tree .
       
       - name: Publish package to PyPI
         run: flit publish
@@ -98,7 +97,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./epa-regions_*.zip
+          file: ./shapefiles/epa-regions_*.zip
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: true
