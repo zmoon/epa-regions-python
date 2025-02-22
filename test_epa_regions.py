@@ -53,12 +53,12 @@ def test_ne_s3_versions():
         f"v4.1.0" if p.name == "4.1.1" else f"v{p.name}"
         for p in version_dirs
     ]
-    se_versions_set = set(versions)
+    s3_versions_set = set(versions)
 
     versions_set = set(VERSIONS)
     assert len(versions_set) == len(VERSIONS), "should be unique"
 
-    assert versions_set == se_versions_set
+    assert versions_set == s3_versions_set
 
 
 @pytest.mark.parametrize(
