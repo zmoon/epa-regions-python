@@ -17,6 +17,7 @@ dependencies:
   - pytest
   - pytest-codeblocks
   - s3fs
+  - xarray
   #
   - flit
   - ipython
