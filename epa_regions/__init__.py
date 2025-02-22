@@ -1,6 +1,7 @@
 """
-EPA region definitions and representations in
-GeoPandas and regionmask, derived from Natural Earth shapefiles.
+EPA region definitions and representations
+in GeoPandas and regionmask,
+derived from Natural Earth shapefiles.
 """
 from __future__ import annotations
 
