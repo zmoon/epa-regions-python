@@ -1,0 +1,24 @@
+name: epa-regions
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python
+  - pip
+  #
+  - geopandas
+  - pooch
+  - pyogrio
+  - regionmask
+  #
+  - cartopy
+  - matplotlib-base
+  - mypy
+  - pytest
+  - s3fs
+  #
+  - flit
+  - ipython
+  #
+  pip:
+    - "-e ."
