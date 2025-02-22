@@ -36,7 +36,7 @@ def test_ne_s3_versions():
     import re
     from pathlib import Path
 
-    import s3fs
+    import s3fs  # type: ignore[import-untyped]
 
     s3 = s3fs.S3FileSystem(anon=True)
     objs = s3.ls("naturalearth")
@@ -50,15 +50,15 @@ def test_ne_s3_versions():
             version_dirs.append(p)
 
     versions = [
-        f"v4.1.0" if p.name == "4.1.1" else f"v{p.name}"
+        "v4.1.0" if p.name == "4.1.1" else f"v{p.name}"
         for p in version_dirs
     ]
-    se_versions_set = set(versions)
+    s3_versions_set = set(versions)
 
     versions_set = set(VERSIONS)
     assert len(versions_set) == len(VERSIONS), "should be unique"
 
-    assert versions_set == se_versions_set
+    assert versions_set == s3_versions_set
 
 
 @pytest.mark.parametrize(
@@ -66,7 +66,7 @@ def test_ne_s3_versions():
     list(itertools.product(RESOLUTIONS, versions_test)),
 )
 def test_get(resolution, version):
-    import geopandas as gpd
+    import geopandas as gpd  # type: ignore[import-untyped]
 
     gdf = get(resolution=resolution, version=version)
 

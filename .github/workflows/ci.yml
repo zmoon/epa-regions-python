@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: [v*]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * 1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+      fail-fast: false
+    defaults:
+      run:
+        shell: bash -leo pipefail {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+          create-args: >-
+            python=${{ matrix.python-version }}
+
+      - name: Run pytest tests
+        run: pytest -v -ra --codeblocks -W error
+          -W "ignore::cartopy.io.DownloadWarning"
+          -W "default::ResourceWarning"
+
+      - name: Run as script
+        run: python -m epa_regions
+
+      - name: Run mypy
+        run: mypy --install-types --non-interactive epa_regions *.py
+
+      - name: Test that package builds
+        run: flit build --use-vcs
+
+      - name: Test shapefile saving
+        run: python save.py
+
+      - name: Upload built package
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
+      - name: Upload shapefiles
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shapefiles
+          path: epa-regions_*.zip
+          retention-days: 1
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name:
+
+      - name: List downloaded artifacts
+        run: ls -Al
+      
+      - name: Publish package to PyPI
+        run: flit publish
+        env:
+          FLIT_USERNAME: __token__
+          FLIT_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Upload shapefiles to a GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./epa-regions_*.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true

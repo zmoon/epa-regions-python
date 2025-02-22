@@ -15,3 +15,6 @@ dependencies = []
 Home = "https://github.com/zmoon/epa-regions-python"
 Source = "https://github.com/zmoon/epa-regions-python"
 # Documentation = "https://github.com/zmoon/epa-regions-python"
+
+[tool.flit.sdist]
+exclude = [".github/", ".gitignore", "environment.yml"]
