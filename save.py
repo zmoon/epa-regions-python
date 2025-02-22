@@ -33,7 +33,8 @@ def write(resolution: str = "50m", *, version: str = "v5.1.2") -> Path:
     with TemporaryDirectory() as tmpdir:
         d = Path(tmpdir)
 
-        stem = f"epa-regions_ne-{version}_{resolution}"
+        stem = f"epa-regions_ne-{version.replace('.', '-')}_{resolution}"
+        assert "." not in stem
         gdf.to_file(d / f"{stem}.shp")
 
         z = Path.cwd() / f"{stem}.zip"
