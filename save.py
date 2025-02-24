@@ -39,7 +39,7 @@ def write(resolution: str = "50m", *, version: str = "v5.1.2") -> Path:
 
         z = Path.cwd() / f"{stem}.zip"
         with ZipFile(z, "w") as zf:
-            for f in Path(tmpdir).rglob(f"{stem}.*"):
+            for f in Path(tmpdir).glob(f"{stem}.*"):
                 zf.write(f, f.name)
 
     return z
