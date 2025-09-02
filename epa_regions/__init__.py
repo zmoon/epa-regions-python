@@ -286,7 +286,7 @@ def get(
         gdf.loc[loc, "epa_region"] = label
         gdf.loc[loc, "epa_region_office"] = r.office
 
-    gdf = gdf.dissolve(
+    gdf = gdf.dissolve(  # type: ignore[operator]
         by="epa_region",
         aggfunc={"abbrev": list, "name": list, "epa_region_office": "first"},
     )
