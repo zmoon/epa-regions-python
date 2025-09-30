@@ -243,7 +243,7 @@ def get(
     #
 
     if states_only:
-        other = pd.DataFrame()
+        gdf = states
     else:
         other = (
             gdf.loc[
@@ -265,11 +265,8 @@ def get(
 
         other = other.drop(columns=["iso_a2"])
 
-    #
-    # Combine
-    #
-
-    gdf = pd.concat([states, other], ignore_index=True, sort=False)
+        # Combine
+        gdf = pd.concat([states, other], ignore_index=True, sort=False)
 
     #
     # Dissolve to EPA regions
