@@ -242,6 +242,7 @@ def get(
     # Other
     #
 
+    gdf: GeoDataFrame
     if states_only:
         gdf = states
     else:
@@ -266,7 +267,7 @@ def get(
         other = other.drop(columns=["iso_a2"])
 
         # Combine
-        gdf = pd.concat([states, other], ignore_index=True, sort=False)
+        gdf = pd.concat([states, other], ignore_index=True, sort=False)  # type: ignore[assignment]
 
     #
     # Dissolve to EPA regions
