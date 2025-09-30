@@ -221,18 +221,18 @@ def get(
 
     from .load import load
 
-    gdf = load(resolution, version=version)
+    gdf_ne = load(resolution, version=version)
     # NOTE: sov_a3 = 'US1' includes Guam and PR
     # NOTE: iso_a2 is the 2-letter country code
 
-    gdf.columns = gdf.columns.str.lower()
+    gdf_ne.columns = gdf_ne.columns.str.lower()
 
     #
     # States + DC
     #
 
     states = (
-        gdf[["geometry", "name", "admin", "postal"]]
+        gdf_ne[["geometry", "name", "admin", "postal"]]
         .query("admin == 'United States of America'")
         .drop(columns=["admin"])
         .rename(columns={"postal": "abbrev"})
@@ -242,12 +242,13 @@ def get(
     # Other
     #
 
+    gdf: GeoDataFrame
     if states_only:
-        other = pd.DataFrame()
+        gdf = states
     else:
         other = (
-            gdf.loc[
-                gdf["admin"].isin(_OTHER_ADMIN_TO_CODE),
+            gdf_ne.loc[
+                gdf_ne["admin"].isin(_OTHER_ADMIN_TO_CODE),
                 ["geometry", "name", "admin", "iso_a2"],
             ]
             .dissolve(by="admin", aggfunc={"name": list, "iso_a2": list})
@@ -265,11 +266,8 @@ def get(
 
         other = other.drop(columns=["iso_a2"])
 
-    #
-    # Combine
-    #
-
-    gdf = pd.concat([states, other], ignore_index=True, sort=False)
+        # Combine
+        gdf = pd.concat([states, other], ignore_index=True, sort=False)  # type: ignore[assignment]
 
     #
     # Dissolve to EPA regions
