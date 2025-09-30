@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 if TYPE_CHECKING:
     from geopandas import GeoDataFrame  # type: ignore[import-untyped]
 
+ENGINE: Literal["fiona", "pyogrio"]
 try:
     import pyogrio  # type: ignore[import-untyped]  # noqa: F401
 except ImportError:
