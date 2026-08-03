@@ -14,8 +14,8 @@ dependencies:
   - cartopy
   - matplotlib-base
   - mypy
-  - pytest
-  - pytest-codeblocks
+  - pytest=9.*
+  - pytest-codeblocks>=0.18
   - s3fs
   - xarray
   #
