@@ -15,7 +15,6 @@ dependencies:
   - matplotlib-base
   - mypy
   - pytest=9.*
-  - pytest-codeblocks>=0.18
   - s3fs
   - xarray
   #
@@ -23,4 +22,5 @@ dependencies:
   - ipython
   #
   - pip:
+      - pytest-codeblocks>=0.18
       - "-e ."
