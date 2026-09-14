@@ -34,6 +34,7 @@ jobs:
       - name: Run pytest tests
         run: pytest -v -ra --codeblocks -W error
           -W "ignore::cartopy.io.DownloadWarning"
+          -W "ignore:Use \`@\` matmul:PendingDeprecationWarning:regionmask.core.mask"
           -W "default::ResourceWarning"
 
       - name: Run as script
